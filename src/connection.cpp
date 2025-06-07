@@ -6,6 +6,8 @@
 #include <array>
 #include <cstring>
 #include <fcntl.h>
+#include <fmt/ranges.h>
+#include <fmt/std.h>
 #include <netdb.h>
 #include <poll.h>
 #include <stdexcept>
@@ -13,11 +15,17 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+namespace wibens::resp
+{
+
 using namespace std::string_literals;
 using namespace std::chrono_literals;
 
 struct HelloCommand : public CommandBase {
-    using ResultType = std::unordered_map<std::string, std::variant<std::string, int64_t, std::vector<std::string>>>;
+    using ResultType = std::unordered_map<
+        std::string, std::variant<std::string, int64_t,
+                                  std::vector<std::unordered_map<std::string, std::variant<std::string, int64_t>>>>>;
+    // using ResultType = void;
     HelloCommand(int version) : CommandBase("HELLO {}", version)
     {
     }
@@ -49,7 +57,7 @@ static std::string_view parse(std::string_view buffer)
             if (endSize == std::string_view::npos) {
                 return {};
             }
-            auto size = readnum<size_t>(buffer.substr(1, endSize));
+            auto size = parser::readnum<size_t>(buffer.substr(1, endSize));
             std::string_view innerData = buffer.substr(endSize + 2);
             if (innerData.size() < size + 2) {
                 return {};
@@ -63,7 +71,7 @@ static std::string_view parse(std::string_view buffer)
             if (endCount == std::string_view::npos) {
                 return {};
             }
-            auto count = readnum<size_t>(buffer.substr(1, endCount));
+            auto count = parser::readnum<size_t>(buffer.substr(1, endCount));
             if (isMap) {
                 count *= 2;
             }
@@ -136,7 +144,8 @@ RedisTcpConnection::RedisTcpConnection(TcpConnectionParams params)
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
     SyncExecutor executor(this, 100ms);
-    executor(HelloCommand(connParams.version));
+    auto helloResponse = executor(HelloCommand(connParams.version));
+    fmt::print("Hello response: {}\n", helloResponse);
 }
 
 RedisTcpConnection::~RedisTcpConnection()
@@ -182,3 +191,4 @@ bool RedisTcpConnection::receive(std::chrono::milliseconds timeout)
 
     return parseResponses();
 }
+} // namespace wibens::resp

@@ -28,6 +28,7 @@ add_executable(${PROJECT_NAME}
     src/syncexecutor.cpp
     src/main.cpp
     src/connection.cpp
+    src/asyncexecutor.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/src)

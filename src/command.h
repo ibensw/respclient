@@ -3,6 +3,9 @@
 #include <fmt/format.h>
 #include <string_view>
 
+namespace wibens::resp
+{
+
 struct CommandBase {
     template <typename... Args> CommandBase(fmt::format_string<Args...> command, Args... args)
     {
@@ -17,3 +20,4 @@ struct CommandBase {
   private:
     fmt::basic_memory_buffer<char, 32> buffer;
 };
+} // namespace wibens::resp

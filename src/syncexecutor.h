@@ -5,6 +5,8 @@
 #include <chrono>
 #include <optional>
 
+namespace wibens::resp
+{
 class SyncExecutor
 {
   public:
@@ -17,7 +19,7 @@ class SyncExecutor
     {
         auto result = execute(command.getCommand(), timeout.value_or(defaultTimeout));
         std::string_view view = result;
-        return Parser<typename T::ResultType>::parse(view);
+        return parser::Parser<typename T::ResultType>::parse(view);
     }
 
   private:
@@ -26,3 +28,4 @@ class SyncExecutor
     RedisConnection *connection;
     std::chrono::milliseconds defaultTimeout;
 };
+} // namespace wibens::resp

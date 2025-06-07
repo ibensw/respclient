@@ -6,6 +6,8 @@
 #include <variant>
 #include <vector>
 
+namespace wibens::resp
+{
 template <typename T> using DefaultVector = std::vector<T>;
 template <typename K, typename V> using DefaultMap = std::unordered_map<K, V>;
 template <typename StringType = std::string, typename IntegerType = int64_t, typename NullType = std::monostate,
@@ -24,3 +26,4 @@ struct Types {
     template <typename K, typename V> using Map = MapType<K, V>;
     template <typename... T> using Variant = VariantType<T...>;
 };
+} // namespace wibens::resp

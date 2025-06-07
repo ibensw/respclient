@@ -6,6 +6,8 @@
 #include <string>
 #include <string_view>
 
+namespace wibens::resp
+{
 struct TcpConnectionParams {
     std::string host;
     int port;
@@ -62,3 +64,4 @@ class RedisTcpConnection : public RedisConnection
     int fd{-1};
     TcpConnectionParams connParams;
 };
+} // namespace wibens::resp

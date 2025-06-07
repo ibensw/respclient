@@ -3,6 +3,8 @@
 #include <string>
 #include <string_view>
 
+namespace wibens::resp
+{
 std::string SyncExecutor::execute(std::string_view command, std::chrono::milliseconds timeout)
 {
     connection->send(command);
@@ -11,3 +13,4 @@ std::string SyncExecutor::execute(std::string_view command, std::chrono::millise
     }
     throw std::runtime_error("Timeout while waiting for response");
 }
+} // namespace wibens::resp

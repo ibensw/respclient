@@ -2,10 +2,13 @@
 
 #include "types.h"
 #include <charconv>
+#include <chrono>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 
+namespace wibens::resp::parser
+{
 template <typename T> T readnum(std::string_view input)
 {
     T value{};
@@ -26,6 +29,13 @@ template <> struct Parser<std::string> {
 template <> struct Parser<int64_t> {
     static constexpr inline std::string_view prefixes = ":";
     static int64_t parse(std::string_view &input);
+};
+
+template <> struct Parser<std::chrono::system_clock::time_point> : Parser<int64_t> {
+    static auto parse(std::string_view &input)
+    {
+        return std::chrono::system_clock::time_point{std::chrono::seconds{Parser<int64_t>::parse(input)}};
+    }
 };
 
 template <> struct Parser<std::monostate> {
@@ -91,3 +101,15 @@ template <typename T> struct Parser<std::vector<T>> {
         return result;
     }
 };
+
+struct IgnoreAll {
+};
+
+template <> struct Parser<IgnoreAll> {
+    static constexpr inline std::string_view prefixes = "+-:$*_#,(!=%`~>";
+    static IgnoreAll parse(std::string_view &)
+    {
+        return {};
+    }
+};
+} // namespace wibens::resp::parser

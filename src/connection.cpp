@@ -173,7 +173,7 @@ bool RedisTcpConnection::receive(std::chrono::milliseconds timeout)
     int pollResult = poll(&fdSet, 1, static_cast<int>(timeout.count()));
 
     if (pollResult < 0) {
-        throw std::runtime_error("Poll failed"s + strerror(errno));
+        throw error::ConnectionError("Poll failed"s + strerror(errno));
     }
     if (pollResult == 0) {
         return false; // Timeout

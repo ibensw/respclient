@@ -12,8 +12,7 @@ namespace wibens::resp::parser
 {
 template <typename T> T readnum(std::string_view input)
 {
-    T value{};
-    if (std::from_chars(input.data(), input.data() + input.size(), value).ec == std::errc()) {
+    if (T value{}; std::from_chars(input.data(), input.data() + input.size(), value).ec == std::errc()) {
         return value;
     }
     throw error::ParseError("Invalid number format");

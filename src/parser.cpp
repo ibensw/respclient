@@ -29,8 +29,7 @@ int64_t Parser<int64_t>::parse(std::string_view &input)
 {
     int64_t value{};
     input.remove_prefix(1);
-    auto end = input.find("\r\n");
-    if (std::from_chars(input.data(), input.data() + end, value).ec == std::errc()) {
+    if (auto end = input.find("\r\n"); std::from_chars(input.data(), input.data() + end, value).ec == std::errc()) {
         input.remove_prefix(end + 2);
         return value;
     }

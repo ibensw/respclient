@@ -7,7 +7,7 @@ namespace wibens::resp
 {
 
 struct CommandBase {
-    template <typename... Args> CommandBase(fmt::format_string<Args...> command, Args... args)
+    template <typename... Args> CommandBase(fmt::format_string<Args...> command, Args &&...args)
     {
         fmt::format_to(std::back_inserter(buffer), command, std::forward<Args>(args)...);
         buffer.append(std::string_view{"\r\n"});

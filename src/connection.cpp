@@ -2,6 +2,7 @@
 
 #include "command.h"
 #include "syncexecutor.h"
+#include "types.h"
 #include <arpa/inet.h>
 #include <array>
 #include <cstring>
@@ -22,11 +23,12 @@ using namespace std::string_literals;
 using namespace std::chrono_literals;
 
 struct HelloCommand : public CommandBase {
-    using ResultType = std::unordered_map<
-        std::string, std::variant<std::string, int64_t,
-                                  std::vector<std::unordered_map<std::string, std::variant<std::string, int64_t>>>>>;
-    // using ResultType = void;
-    HelloCommand(int version) : CommandBase("HELLO {}", version)
+    using T = Types<>;
+    using ResultType =
+        T::Map<T::String,
+               T::Variant<T::String, T::Integer, T::Array<T::Map<T::String, T::Variant<T::String, T::Integer>>>>>;
+    // using ResultType = Ignore;
+    explicit HelloCommand(int version) : CommandBase("HELLO {}", version)
     {
     }
 };
@@ -58,8 +60,7 @@ static std::string_view parse(std::string_view buffer)
                 return {};
             }
             auto size = parser::readnum<size_t>(buffer.substr(1, endSize));
-            std::string_view innerData = buffer.substr(endSize + 2);
-            if (innerData.size() < size + 2) {
+            if (auto innerData = buffer.substr(endSize + 2); innerData.size() < size + 2) {
                 return {};
             }
             return buffer.substr(0, endSize + 2 + size + 2);
@@ -88,7 +89,7 @@ static std::string_view parse(std::string_view buffer)
             return buffer.substr(0, endCount + 2 + totalSize);
         }
         default:
-            throw std::runtime_error("Unexpected prefix in response: "s + std::string{buffer[0]});
+            throw error::ParseError("Unexpected prefix in response: "s + std::string{buffer[0]});
     }
 }
 
@@ -113,7 +114,7 @@ RedisTcpConnection::RedisTcpConnection(TcpConnectionParams params)
     : fd(socket(AF_INET, SOCK_STREAM, 0)), connParams(std::move(params))
 {
     if (fd < 0) {
-        throw std::runtime_error("Failed to create socket"s + strerror(errno));
+        throw error::ConnectionError("Failed to create socket"s + strerror(errno));
     }
 
     addrinfo hints{};
@@ -121,10 +122,9 @@ RedisTcpConnection::RedisTcpConnection(TcpConnectionParams params)
     hints.ai_family = AF_INET; // IPv4
     hints.ai_socktype = SOCK_STREAM;
     std::string portStr = std::to_string(connParams.port);
-    int err = getaddrinfo(connParams.host.c_str(), portStr.c_str(), &hints, &res);
-    if (err != 0) {
+    if (int err = getaddrinfo(connParams.host.c_str(), portStr.c_str(), &hints, &res); err != 0) {
         close(fd);
-        throw std::runtime_error("Failed to get address info: "s + gai_strerror(err));
+        throw error::ConnectionError("Failed to get address info: "s + gai_strerror(err));
     }
 
     // Connect to the first valid address returned by getaddrinfo
@@ -136,7 +136,7 @@ RedisTcpConnection::RedisTcpConnection(TcpConnectionParams params)
     freeaddrinfo(res);
     if (p == nullptr) {
         close(fd);
-        throw std::runtime_error("No valid addresses found"s);
+        throw error::ConnectionError("No valid addresses found"s);
     }
 
     // Make the socket non-blocking

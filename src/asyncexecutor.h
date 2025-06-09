@@ -12,7 +12,7 @@ namespace wibens::resp
 template <typename ResultType> class ResultFuture : public std::future<std::string>
 {
   public:
-    ResultFuture(std::future<std::string> &&promise) : std::future<std::string>(std::move(promise))
+    explicit ResultFuture(std::future<std::string> &&promise) : std::future<std::string>(std::move(promise))
     {
     }
 
@@ -32,7 +32,7 @@ template <typename ResultType> class ResultFuture : public std::future<std::stri
 class ASyncExecutor
 {
   public:
-    ASyncExecutor(RedisConnection *conn) : connection(conn)
+    explicit ASyncExecutor(RedisConnection *conn) : connection(conn)
     {
     }
 

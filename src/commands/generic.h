@@ -25,7 +25,7 @@ template <typename T = Types<>> struct Generic {
 
     struct Get : CommandBase {
         using ResultType = typename T::template Variant<typename T::Null, typename T::String>;
-        Get(std::string_view key) : CommandBase("GET {}", key)
+        explicit Get(std::string_view key) : CommandBase("GET {}", key)
         {
         }
     };
@@ -40,7 +40,7 @@ template <typename T = Types<>> struct Generic {
 
     struct Del : CommandBase {
         using ResultType = T::Integer;
-        Del(std::initializer_list<std::string_view> keys) : CommandBase("DEL {}", fmt::join(keys, " "))
+        explicit Del(std::initializer_list<std::string_view> keys) : CommandBase("DEL {}", fmt::join(keys, " "))
         {
         }
         template <typename... Args> Del(Args... args) : Del(std::initializer_list<std::string_view>{args...})
@@ -60,14 +60,14 @@ template <typename T = Types<>> struct Generic {
 
     struct Dump : CommandBase {
         using ResultType = typename T::template Variant<typename T::Null, typename T::String>;
-        Dump(std::string_view key) : CommandBase("DUMP {}", key)
+        explicit Dump(std::string_view key) : CommandBase("DUMP {}", key)
         {
         }
     };
 
     struct Exists : CommandBase {
         using ResultType = T::Integer;
-        Exists(std::initializer_list<std::string_view> keys) : CommandBase("EXISTS {}", fmt::join(keys, " "))
+        explicit Exists(std::initializer_list<std::string_view> keys) : CommandBase("EXISTS {}", fmt::join(keys, " "))
         {
         }
         template <typename... Args> Exists(Args... args) : Exists(std::initializer_list<std::string_view>{args...})
@@ -91,14 +91,14 @@ template <typename T = Types<>> struct Generic {
 
     struct ExpireTime : CommandBase {
         using ResultType = std::chrono::system_clock::time_point;
-        ExpireTime(std::string_view key) : CommandBase("EXPIRETIME {}", key)
+        explicit ExpireTime(std::string_view key) : CommandBase("EXPIRETIME {}", key)
         {
         }
     };
 
     struct Keys : CommandBase {
         using ResultType = typename T::template Array<T::String>;
-        Keys(std::string_view pattern) : CommandBase("KEYS {}", pattern)
+        explicit Keys(std::string_view pattern) : CommandBase("KEYS {}", pattern)
         {
         }
     };

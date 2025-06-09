@@ -9,7 +9,7 @@
 namespace wibens::resp
 {
 template <typename T> using DefaultVector = std::vector<T>;
-template <typename K, typename V> using DefaultMap = std::unordered_map<K, V>;
+template <typename K, typename V> using DefaultMap = std::unordered_map<K, V, std::hash<K>, std::equal_to<>>;
 template <typename StringType = std::string, typename IntegerType = int64_t, typename NullType = std::monostate,
           typename BooleanType = bool, typename DoubleType = double, typename BigIntType = std::string,
           template <typename> typename ArrayType = DefaultVector,

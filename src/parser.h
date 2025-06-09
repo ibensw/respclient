@@ -1,5 +1,6 @@
 #pragma once
 
+#include "error.h"
 #include "types.h"
 #include <charconv>
 #include <chrono>
@@ -15,7 +16,7 @@ template <typename T> T readnum(std::string_view input)
     if (std::from_chars(input.data(), input.data() + input.size(), value).ec == std::errc()) {
         return value;
     }
-    throw std::runtime_error("Invalid number format");
+    throw error::ParseError("Invalid number format");
 }
 
 template <typename T> struct Parser {
@@ -62,15 +63,15 @@ template <typename... Args> struct Parser<std::variant<Args...>> {
         if constexpr (sizeof...(Ts) > 0) {
             return parseInner<Ts...>(input);
         }
-        throw std::runtime_error("Invalid response format");
+        throw error::ParseError("Invalid response format");
     }
 };
 
-template <typename K, typename V> struct Parser<std::unordered_map<K, V>> {
+template <typename K, typename V, typename... Args> struct Parser<std::unordered_map<K, V, Args...>> {
     static constexpr inline std::string_view prefixes = "%";
-    static std::unordered_map<K, V> parse(std::string_view &input)
+    static std::unordered_map<K, V, Args...> parse(std::string_view &input)
     {
-        std::unordered_map<K, V> result;
+        std::unordered_map<K, V, Args...> result;
         input.remove_prefix(1);
         auto endSize = input.find("\r\n");
         auto count = readnum<size_t>(input.substr(0, endSize));
@@ -84,11 +85,11 @@ template <typename K, typename V> struct Parser<std::unordered_map<K, V>> {
     }
 };
 
-template <typename T> struct Parser<std::vector<T>> {
+template <typename T, typename... Args> struct Parser<std::vector<T, Args...>> {
     static constexpr inline std::string_view prefixes = "*";
     static std::vector<T> parse(std::string_view &input)
     {
-        std::vector<T> result;
+        std::vector<T, Args...> result;
         input.remove_prefix(1);
         auto endSize = input.find("\r\n");
         auto count = readnum<size_t>(input.substr(0, endSize));

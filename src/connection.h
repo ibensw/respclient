@@ -1,5 +1,6 @@
 #pragma once
 
+#include "error.h"
 #include "types.h"
 #include <chrono>
 #include <deque>
@@ -8,6 +9,14 @@
 
 namespace wibens::resp
 {
+
+namespace error
+{
+struct ConnectionError : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+}; // namespace error
+
 struct TcpConnectionParams {
     std::string host;
     int port;
@@ -49,8 +58,8 @@ class RedisConnection
 class RedisTcpConnection : public RedisConnection
 {
   public:
-    RedisTcpConnection(TcpConnectionParams params);
-    ~RedisTcpConnection();
+    explicit RedisTcpConnection(TcpConnectionParams params);
+    ~RedisTcpConnection() override;
 
     RedisTcpConnection(const RedisTcpConnection &) = delete;
     RedisTcpConnection &operator=(const RedisTcpConnection &) = delete;

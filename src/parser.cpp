@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "error.h"
 #include <charconv>
 
 namespace wibens::resp::parser
@@ -19,7 +20,7 @@ std::string Parser<std::string>::parse(std::string_view &input)
         result = std::string{input.substr(0, size)};
         input.remove_prefix(size + 2);
     } else {
-        throw std::runtime_error("Invalid response format");
+        throw error::ParseError("Invalid response format");
     }
     return result;
 }
@@ -33,6 +34,6 @@ int64_t Parser<int64_t>::parse(std::string_view &input)
         input.remove_prefix(end + 2);
         return value;
     }
-    throw std::runtime_error("Invalid number format");
+    throw error::ParseError("Invalid number format");
 }
 } // namespace wibens::resp::parser

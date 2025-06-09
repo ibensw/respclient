@@ -107,7 +107,7 @@ struct IgnoreAll {
 
 template <> struct Parser<IgnoreAll> {
     static constexpr inline std::string_view prefixes = "+-:$*_#,(!=%`~>";
-    static IgnoreAll parse(std::string_view &)
+    static IgnoreAll parse(const std::string_view &)
     {
         return {};
     }

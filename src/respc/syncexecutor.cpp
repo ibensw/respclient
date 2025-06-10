@@ -11,6 +11,6 @@ std::string SyncExecutor::execute(std::string_view command, std::chrono::millise
     if (connection->receive(timeout)) {
         return connection->popResponse();
     }
-    throw std::runtime_error("Timeout while waiting for response");
+    throw error::TimeoutError("Timeout while waiting for response");
 }
 } // namespace wibens::resp

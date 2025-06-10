@@ -7,6 +7,13 @@
 
 namespace wibens::resp
 {
+namespace error
+{
+struct TimeoutError : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+}; // namespace error
+
 class SyncExecutor
 {
   public:

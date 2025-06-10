@@ -28,9 +28,8 @@ Required [libfmt](https://github.com/fmtlib/fmt)
 * Commands from the generic category
 
 ## Todo
-* Build as library
-* Verify the install path of the header files
 * Convert main.cpp to proper unit tests
 * Add custom other command categories
 * Add other connection types (unix domain socket) and connection wrappers (connection pool, auto reconnect, ...)
 * Investigate subscribers
+* Add C++20/libfmt option

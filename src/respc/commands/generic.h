@@ -1,7 +1,7 @@
 #pragma once
 
-#include "command.h"
-#include "types.h"
+#include "../command.h"
+#include "../types.h"
 
 namespace wibens::resp
 {

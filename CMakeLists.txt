@@ -15,7 +15,6 @@ endif()
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wmisleading-indentation -Wnull-dereference")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=address,undefined -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
@@ -23,15 +22,51 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 endif()
 
-add_executable(${PROJECT_NAME}
-    src/parser.cpp
-    src/syncexecutor.cpp
-    src/main.cpp
-    src/connection.cpp
-    src/asyncexecutor.cpp
+add_library(respc SHARED
+    src/respc/parser.cpp
+    src/respc/syncexecutor.cpp
+    src/respc/connection.cpp
+    src/respc/asyncexecutor.cpp
 )
+target_compile_options(respc PRIVATE
+    -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor
+    -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual
+    -Wmisleading-indentation -Wnull-dereference)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(respc
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+        $<INSTALL_INTERFACE:include>
+)
+target_include_directories(respc
+    PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/respc>
+)
+find_package(fmt REQUIRED)
+target_link_libraries(respc fmt::fmt)
+target_compile_definitions(USE_LIB_FMT)
 
-find_package(fmt)
-target_link_libraries(${PROJECT_NAME} fmt::fmt)
+add_executable(${PROJECT_NAME}
+    src/main.cpp
+)
+target_link_libraries(${PROJECT_NAME} respc)
+
+
+# ## Install steps
+# Install library
+install(TARGETS respc
+        EXPORT respcTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include)
+
+# Install public headers
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.h")
+
+install(EXPORT respcTargets
+        FILE respcTargets.cmake
+        NAMESPACE respc::
+        DESTINATION lib/cmake/respc)

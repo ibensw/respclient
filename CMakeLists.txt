@@ -44,7 +44,6 @@ target_include_directories(respc
 )
 find_package(fmt REQUIRED)
 target_link_libraries(respc fmt::fmt)
-target_compile_definitions(USE_LIB_FMT)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp

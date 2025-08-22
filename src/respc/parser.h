@@ -4,9 +4,11 @@
 #include "types.h"
 #include <charconv>
 #include <chrono>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <variant>
 
 namespace wibens::resp::parser
 {
@@ -63,6 +65,18 @@ template <typename... Args> struct Parser<std::variant<Args...>> {
             return parseInner<Ts...>(input);
         }
         throw error::ParseError("Invalid response format");
+    }
+};
+
+template <typename T> struct Parser<std::optional<T>> : Parser<std::variant<std::monostate, T>> {
+    static std::optional<T> parse(std::string_view &input)
+    {
+        if (auto result = Parser<std::variant<std::monostate, T>>::parse(input);
+            std::holds_alternative<std::monostate>(result)) {
+            return std::nullopt;
+        } else {
+            return std::get<T>(result);
+        }
     }
 };
 

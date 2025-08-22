@@ -40,7 +40,7 @@ template <typename T = Types<>> struct Generic {
 
     struct Del : CommandBase {
         using ResultType = typename T::Integer;
-        explicit Del(std::initializer_list<std::string_view> keys) : CommandBase("DEL {}", fmt::join(keys, " "))
+        explicit Del(std::initializer_list<std::string_view> keys) : CommandBase("DEL {}", util::join(keys, " "))
         {
         }
         template <typename... Args> explicit Del(Args... args) : Del(std::initializer_list<std::string_view>{args...})
@@ -52,7 +52,7 @@ template <typename T = Types<>> struct Generic {
         using ResultType = typename T::Integer;
         Copy(std::string_view source, std::string_view destination,
              std::optional<std::string_view> database = std::nullopt, bool replace = false)
-            : CommandBase("COPY {} {}{}{}", source, destination, database ? fmt::format("DB {}", *database) : "",
+            : CommandBase("COPY {} {}{}{}", source, destination, database ? std::format("DB {}", *database) : "",
                           replace ? " REPLACE" : "")
         {
         }
@@ -67,7 +67,7 @@ template <typename T = Types<>> struct Generic {
 
     struct Exists : CommandBase {
         using ResultType = typename T::Integer;
-        explicit Exists(std::initializer_list<std::string_view> keys) : CommandBase("EXISTS {}", fmt::join(keys, " "))
+        explicit Exists(std::initializer_list<std::string_view> keys) : CommandBase("EXISTS {}", util::join(keys, " "))
         {
         }
         template <typename... Args>

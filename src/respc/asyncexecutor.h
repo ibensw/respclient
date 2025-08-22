@@ -36,6 +36,13 @@ class ASyncExecutor
     {
     }
 
+    ~ASyncExecutor()
+    {
+        // Wait for all promises to be fulfilled before releasing the connection
+        while (listen(std::chrono::milliseconds(-1))) {
+        }
+    }
+
     template <typename T> ResultFuture<typename T::ResultType> operator()(const T &command)
     {
         auto &result = execute(command.getCommand());

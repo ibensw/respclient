@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 # Set project name and C++ standard
 project(respclient LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_TESTS "Enable tests" ON)
@@ -27,6 +27,7 @@ add_library(respc SHARED
     src/respc/syncexecutor.cpp
     src/respc/connection.cpp
     src/respc/asyncexecutor.cpp
+    src/respc/ast.cpp
 )
 target_compile_options(respc PRIVATE
     -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor
@@ -42,8 +43,6 @@ target_include_directories(respc
     PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/respc>
 )
-find_package(fmt REQUIRED)
-target_link_libraries(respc fmt::fmt)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp

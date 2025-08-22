@@ -1,23 +1,27 @@
 #pragma once
 
-#include <fmt/format.h>
-#include <string_view>
+#include "ast.h"
+#include <string>
 
 namespace wibens::resp
 {
 
 struct CommandBase {
-    template <typename... Args> CommandBase(fmt::format_string<Args...> command, Args &&...args)
+    CommandBase() = default;
+    template <typename... ARGS> CommandBase(ARGS &&...args)
     {
-        fmt::format_to(std::back_inserter(buffer), command, std::forward<Args>(args)...);
-        buffer.append(std::string_view{"\r\n"});
+        buffer = ast::Node(std::forward<ARGS>(args)...).toString();
     }
-    std::string_view getCommand() const
+    void build(const ast::Node &node)
     {
-        return {buffer.data(), buffer.size()};
+        buffer = node.toString();
+    }
+    const std::string &getCommand() const
+    {
+        return buffer;
     }
 
   private:
-    fmt::basic_memory_buffer<char, 32> buffer;
+    std::string buffer;
 };
 } // namespace wibens::resp

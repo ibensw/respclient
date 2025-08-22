@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "connection.h"
 #include "parser.h"
 #include <chrono>
@@ -9,24 +10,23 @@
 
 namespace wibens::resp
 {
-template <typename ResultType> class ResultFuture : public std::future<std::string>
+template <typename ResultType> class ResultFuture : public std::future<ast::Node::Ptr>
 {
   public:
-    explicit ResultFuture(std::future<std::string> &&promise) : std::future<std::string>(std::move(promise))
+    explicit ResultFuture(std::future<ast::Node::Ptr> &&promise) : std::future<ast::Node::Ptr>(std::move(promise))
     {
     }
 
     ResultType get()
     {
-        std::string value = std::future<std::string>::get();
-        std::string_view view = value;
-        return parser::Parser<ResultType>::parse(view);
+        auto value = std::future<ast::Node::Ptr>::get();
+        return parser::Parser<ResultType>::parse(value.get());
     }
 
-    using std::future<std::string>::valid;
-    using std::future<std::string>::wait;
-    using std::future<std::string>::wait_for;
-    using std::future<std::string>::wait_until;
+    using std::future<ast::Node::Ptr>::valid;
+    using std::future<ast::Node::Ptr>::wait;
+    using std::future<ast::Node::Ptr>::wait_for;
+    using std::future<ast::Node::Ptr>::wait_until;
 };
 
 class ASyncExecutor
@@ -52,8 +52,8 @@ class ASyncExecutor
     bool listen(std::chrono::milliseconds timeout);
 
   private:
-    std::promise<std::string> &execute(std::string_view command);
-    std::deque<std::promise<std::string>> promises;
+    std::promise<ast::Node::Ptr> &execute(std::string_view command);
+    std::deque<std::promise<ast::Node::Ptr>> promises;
 
     RedisConnection *connection;
 };

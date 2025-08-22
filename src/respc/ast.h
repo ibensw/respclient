@@ -81,13 +81,14 @@ class Node
         makeAggregate('%');
     }
 
-    template <typename T> T get() const
-    {
-    }
-
     const std::string &toString() const
     {
         return data;
+    }
+
+    char type() const
+    {
+        return data[0];
     }
 
     void rebuild();

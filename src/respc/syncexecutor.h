@@ -25,12 +25,11 @@ class SyncExecutor
     typename T::ResultType operator()(const T &command, std::optional<std::chrono::milliseconds> timeout = std::nullopt)
     {
         auto result = execute(command.getCommand(), timeout.value_or(defaultTimeout));
-        std::string_view view = result;
-        return parser::Parser<typename T::ResultType>::parse(view);
+        return parser::Parser<typename T::ResultType>::parse(result.get());
     }
 
   private:
-    std::string execute(std::string_view command, std::chrono::milliseconds timeout);
+    ast::Node::Ptr execute(std::string_view command, std::chrono::milliseconds timeout);
 
     RedisConnection *connection;
     std::chrono::milliseconds defaultTimeout;

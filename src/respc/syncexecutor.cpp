@@ -5,7 +5,7 @@
 
 namespace wibens::resp
 {
-std::string SyncExecutor::execute(std::string_view command, std::chrono::milliseconds timeout)
+ast::Node::Ptr SyncExecutor::execute(std::string_view command, std::chrono::milliseconds timeout)
 {
     connection->send(command);
     auto deadline = std::chrono::steady_clock::now() + timeout;

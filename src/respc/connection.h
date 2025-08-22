@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "error.h"
 #include "types.h"
 #include <chrono>
@@ -45,11 +46,11 @@ class RedisConnection
     {
         return responses.size();
     }
-    virtual std::string popResponse()
+    virtual ast::Node::Ptr popResponse()
     {
-        std::string result = std::move(responses.front());
+        auto front = std::move(responses.front());
         responses.pop_front();
-        return result;
+        return front;
     }
 
     void subscribe(std::string channel, Callback callback);
@@ -64,9 +65,9 @@ class RedisConnection
     bool parseResponses();
 
   private:
-    void pushMsg(std::string_view msg);
+    void pushMsg(ast::Node::Ptr msg);
 
-    std::deque<std::string> responses;
+    std::deque<ast::Node::Ptr> responses;
     std::string receiveBuffer;
     std::unordered_map<std::string, Callback> subscriptions;
 };

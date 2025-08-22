@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "error.h"
 #include "types.h"
 #include <charconv>
@@ -25,40 +26,39 @@ template <typename T> struct Parser {
 
 template <> struct Parser<std::string> {
     static constexpr inline std::string_view prefixes = "+$";
-    static std::string parse(std::string_view &input);
+    static std::string parse(ast::Node *input);
 };
 
 template <> struct Parser<int64_t> {
     static constexpr inline std::string_view prefixes = ":";
-    static int64_t parse(std::string_view &input);
+    static int64_t parse(ast::Node *input);
 };
 
-template <> struct Parser<std::chrono::system_clock::time_point> : Parser<int64_t> {
-    static auto parse(std::string_view &input)
-    {
-        return std::chrono::system_clock::time_point{std::chrono::seconds{Parser<int64_t>::parse(input)}};
-    }
-};
+// template <> struct Parser<std::chrono::system_clock::time_point> : Parser<int64_t> {
+//     static auto parse(ast::Node* input)
+//     {
+//         return std::chrono::system_clock::time_point{std::chrono::seconds{Parser<int64_t>::parse(input)}};
+//     }
+// };
 
 template <> struct Parser<std::monostate> {
     static constexpr inline std::string_view prefixes = "_";
-    static std::monostate parse(std::string_view &input)
+    static inline std::monostate parse(ast::Node *)
     {
-        input.remove_prefix(3);
         return {};
     }
 };
 
 template <typename... Args> struct Parser<std::variant<Args...>> {
-    static std::variant<Args...> parse(std::string_view &input)
+    static std::variant<Args...> parse(ast::Node *input)
     {
         return parseInner<Args...>(input);
     }
 
   private:
-    template <typename T, typename... Ts> static std::variant<Args...> parseInner(std::string_view &input)
+    template <typename T, typename... Ts> static std::variant<Args...> parseInner(ast::Node *input)
     {
-        if (Parser<T>::prefixes.find(input[0]) != std::string::npos) {
+        if (Parser<T>::prefixes.find(input->type()) != std::string::npos) {
             return Parser<T>::parse(input);
         }
         if constexpr (sizeof...(Ts) > 0) {
@@ -69,7 +69,7 @@ template <typename... Args> struct Parser<std::variant<Args...>> {
 };
 
 template <typename T> struct Parser<std::optional<T>> : Parser<std::variant<std::monostate, T>> {
-    static std::optional<T> parse(std::string_view &input)
+    static std::optional<T> parse(ast::Node *input)
     {
         if (auto result = Parser<std::variant<std::monostate, T>>::parse(input);
             std::holds_alternative<std::monostate>(result)) {
@@ -82,17 +82,13 @@ template <typename T> struct Parser<std::optional<T>> : Parser<std::variant<std:
 
 template <typename K, typename V, typename... Args> struct Parser<std::unordered_map<K, V, Args...>> {
     static constexpr inline std::string_view prefixes = "%";
-    static std::unordered_map<K, V, Args...> parse(std::string_view &input)
+    static std::unordered_map<K, V, Args...> parse(ast::Node *input)
     {
         std::unordered_map<K, V, Args...> result;
-        input.remove_prefix(1);
-        auto endSize = input.find("\r\n");
-        auto count = readnum<size_t>(input.substr(0, endSize));
-        input.remove_prefix(endSize + 2);
+        auto count = input->children.size() / 2;
         for (size_t i = 0; i < count; ++i) {
-            auto key = Parser<K>::parse(input);
-            auto value = Parser<V>::parse(input);
-            result.emplace(key, value);
+            result.emplace(Parser<K>::parse(input->children[i * 2].get()),
+                           Parser<V>::parse(input->children[i * 2 + 1].get()));
         }
         return result;
     }
@@ -100,17 +96,11 @@ template <typename K, typename V, typename... Args> struct Parser<std::unordered
 
 template <typename T, typename... Args> struct Parser<std::vector<T, Args...>> {
     static constexpr inline std::string_view prefixes = "*";
-    static std::vector<T> parse(std::string_view &input)
+    static std::vector<T> parse(ast::Node *input)
     {
         std::vector<T, Args...> result;
-        input.remove_prefix(1);
-        auto endSize = input.find("\r\n");
-        auto count = readnum<size_t>(input.substr(0, endSize));
-        input.remove_prefix(endSize + 2);
-        result.reserve(count);
-        for (size_t i = 0; i < count; ++i) {
-            auto value = Parser<T>::parse(input);
-            result.emplace_back(value);
+        for (const auto &child : input->children) {
+            result.emplace_back(Parser<T>::parse(child.get()));
         }
         return result;
     }

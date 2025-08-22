@@ -32,84 +32,81 @@ struct HelloCommand : public CommandBase {
     }
 };
 
-static std::string_view parse(std::string_view buffer)
-{
-    if (buffer.empty()) {
-        return {};
-    }
-    switch (buffer[0]) {
-        case '+':
-        case '-':
-        case ':':
-        case '_':
-        case '#':
-        case ',':
-        case '(': {
-            auto end = buffer.find("\r\n");
-            if (end == std::string_view::npos) {
-                return {};
-            }
-            return buffer.substr(0, end + 2);
-        }
-        case '!':
-        case '=':
-        case '$': {
-            auto endSize = buffer.find("\r\n");
-            if (endSize == std::string_view::npos) {
-                return {};
-            }
-            auto size = parser::readnum<size_t>(buffer.substr(1, endSize));
-            if (auto innerData = buffer.substr(endSize + 2); innerData.size() < size + 2) {
-                return {};
-            }
-            return buffer.substr(0, endSize + 2 + size + 2);
-        }
-        case '*':
-        case '%':
-        case '>': {
-            bool isMap = buffer[0] == '%';
-            auto endCount = buffer.find("\r\n");
-            if (endCount == std::string_view::npos) {
-                return {};
-            }
-            auto count = parser::readnum<size_t>(buffer.substr(1, endCount));
-            if (isMap) {
-                count *= 2;
-            }
-            auto start = buffer.substr(endCount + 2);
-            std::size_t totalSize = 0;
-            for (size_t i = 0; i < count; ++i) {
-                std::string_view v = parse(start);
-                if (v.empty()) {
-                    return {};
-                }
-                start.remove_prefix(v.size());
-                totalSize += v.size();
-            }
-            return buffer.substr(0, endCount + 2 + totalSize);
-        }
-        default:
-            throw error::ParseError("Unexpected prefix in response: "s + std::string{buffer[0]});
-    }
-}
+// static std::string_view parse(std::string_view buffer)
+// {
+//     if (buffer.empty()) {
+//         return {};
+//     }
+//     switch (buffer[0]) {
+//         case '+':
+//         case '-':
+//         case ':':
+//         case '_':
+//         case '#':
+//         case ',':
+//         case '(': {
+//             auto end = buffer.find("\r\n");
+//             if (end == std::string_view::npos) {
+//                 return {};
+//             }
+//             return buffer.substr(0, end + 2);
+//         }
+//         case '!':
+//         case '=':
+//         case '$': {
+//             auto endSize = buffer.find("\r\n");
+//             if (endSize == std::string_view::npos) {
+//                 return {};
+//             }
+//             auto size = parser::readnum<size_t>(buffer.substr(1, endSize));
+//             if (auto innerData = buffer.substr(endSize + 2); innerData.size() < size + 2) {
+//                 return {};
+//             }
+//             return buffer.substr(0, endSize + 2 + size + 2);
+//         }
+//         case '*':
+//         case '%':
+//         case '>': {
+//             bool isMap = buffer[0] == '%';
+//             auto endCount = buffer.find("\r\n");
+//             if (endCount == std::string_view::npos) {
+//                 return {};
+//             }
+//             auto count = parser::readnum<size_t>(buffer.substr(1, endCount));
+//             if (isMap) {
+//                 count *= 2;
+//             }
+//             auto start = buffer.substr(endCount + 2);
+//             std::size_t totalSize = 0;
+//             for (size_t i = 0; i < count; ++i) {
+//                 std::string_view v = parse(start);
+//                 if (v.empty()) {
+//                     return {};
+//                 }
+//                 start.remove_prefix(v.size());
+//                 totalSize += v.size();
+//             }
+//             return buffer.substr(0, endCount + 2 + totalSize);
+//         }
+//         default:
+//             throw error::ParseError("Unexpected prefix in response: "s + std::string{buffer[0]});
+//     }
+// }
 
 bool RedisConnection::parseResponses()
 {
-    std::string_view buffer = receiveBuffer;
-    std::string_view response;
     while (true) {
-        response = parse(buffer);
-        if (response.empty()) {
+        ast::Node::Ptr node = nullptr;
+        std::tie(node, receiveBuffer) = ast::Node::parse(receiveBuffer);
+        if (node == nullptr) {
             break;
         }
-        if (response[0] == '>') {
-            pushMsg(response);
+        if (node->type() == '>') {
+            pushMsg(std::move(node));
         } else {
-            responses.emplace_back(response);
+            responses.push_back(std::move(node));
         }
-        buffer.remove_prefix(response.size());
     }
-    receiveBuffer = buffer;
 
     return !responses.empty();
 }
@@ -130,9 +127,9 @@ void RedisConnection::unsubscribe(const std::string &channel)
     subscriptions.erase(channel);
 }
 
-void RedisConnection::pushMsg(std::string_view msg)
+void RedisConnection::pushMsg(ast::Node::Ptr msg)
 {
-    auto parsed = parser::Parser<std::vector<std::variant<std::string, int64_t>>>::parse(msg);
+    auto parsed = parser::Parser<std::vector<std::variant<std::string, int64_t>>>::parse(msg.get());
     if (parsed.empty()) {
         return;
     }

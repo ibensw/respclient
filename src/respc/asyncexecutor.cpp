@@ -6,7 +6,7 @@
 namespace wibens::resp
 {
 
-std::promise<std::string> &ASyncExecutor::execute(std::string_view command)
+std::promise<ast::Node::Ptr> &ASyncExecutor::execute(std::string_view command)
 {
     connection->send(command);
     return promises.emplace_back();
@@ -19,7 +19,7 @@ bool ASyncExecutor::listen(std::chrono::milliseconds timeout)
     }
     connection->receive(timeout);
     while (connection->getResponseCount()) {
-        std::promise<std::string> &promise = promises.front();
+        auto &promise = promises.front();
         promise.set_value(connection->popResponse());
         promises.pop_front();
     }

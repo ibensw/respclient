@@ -1,9 +1,6 @@
 #include "connection.h"
-
 #include "ast.h"
-#include "command.h"
 #include "syncexecutor.h"
-#include "types.h"
 #include <arpa/inet.h>
 #include <array>
 #include <cstring>
@@ -20,78 +17,17 @@ namespace wibens::resp
 
 using namespace std::string_literals;
 using namespace std::chrono_literals;
+using ast::Node;
 
-struct HelloCommand : public CommandBase {
-    using T = Types<>;
-    using ResultType =
-        T::Map<T::String,
-               T::Variant<T::String, T::Integer, T::Array<T::Map<T::String, T::Variant<T::String, T::Integer>>>>>;
+struct HelloCommand : public Node {
+    using ResultType = std::unordered_map<
+        std::string, std::variant<std::string, int64_t,
+                                  std::vector<std::unordered_map<std::string, std::variant<std::string, int64_t>>>>>;
     // using ResultType = Ignore;
-    explicit HelloCommand(std::string_view version) : CommandBase("HELLO", version)
+    explicit HelloCommand(std::string_view version) : Node("HELLO", version)
     {
     }
 };
-
-// static std::string_view parse(std::string_view buffer)
-// {
-//     if (buffer.empty()) {
-//         return {};
-//     }
-//     switch (buffer[0]) {
-//         case '+':
-//         case '-':
-//         case ':':
-//         case '_':
-//         case '#':
-//         case ',':
-//         case '(': {
-//             auto end = buffer.find("\r\n");
-//             if (end == std::string_view::npos) {
-//                 return {};
-//             }
-//             return buffer.substr(0, end + 2);
-//         }
-//         case '!':
-//         case '=':
-//         case '$': {
-//             auto endSize = buffer.find("\r\n");
-//             if (endSize == std::string_view::npos) {
-//                 return {};
-//             }
-//             auto size = parser::readnum<size_t>(buffer.substr(1, endSize));
-//             if (auto innerData = buffer.substr(endSize + 2); innerData.size() < size + 2) {
-//                 return {};
-//             }
-//             return buffer.substr(0, endSize + 2 + size + 2);
-//         }
-//         case '*':
-//         case '%':
-//         case '>': {
-//             bool isMap = buffer[0] == '%';
-//             auto endCount = buffer.find("\r\n");
-//             if (endCount == std::string_view::npos) {
-//                 return {};
-//             }
-//             auto count = parser::readnum<size_t>(buffer.substr(1, endCount));
-//             if (isMap) {
-//                 count *= 2;
-//             }
-//             auto start = buffer.substr(endCount + 2);
-//             std::size_t totalSize = 0;
-//             for (size_t i = 0; i < count; ++i) {
-//                 std::string_view v = parse(start);
-//                 if (v.empty()) {
-//                     return {};
-//                 }
-//                 start.remove_prefix(v.size());
-//                 totalSize += v.size();
-//             }
-//             return buffer.substr(0, endCount + 2 + totalSize);
-//         }
-//         default:
-//             throw error::ParseError("Unexpected prefix in response: "s + std::string{buffer[0]});
-//     }
-// }
 
 bool RedisConnection::parseResponses()
 {
@@ -115,15 +51,15 @@ void RedisConnection::subscribe(std::string channel, Callback callback)
 {
     auto [it, inserted] = subscriptions.emplace(std::move(channel), std::move(callback));
     if (inserted) {
-        CommandBase subscribeCommand("SUBSCRIBE", it->first);
-        send(subscribeCommand.getCommand());
+        Node subscribeCommand("SUBSCRIBE", it->first);
+        send(subscribeCommand.toString());
     }
 }
 
 void RedisConnection::unsubscribe(const std::string &channel)
 {
-    CommandBase unsubscribeCommand("UNSUBSCRIBE", channel);
-    send(unsubscribeCommand.getCommand());
+    Node unsubscribeCommand("UNSUBSCRIBE", channel);
+    send(unsubscribeCommand.toString());
     subscriptions.erase(channel);
 }
 

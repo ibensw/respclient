@@ -45,7 +45,7 @@ class ASyncExecutor
 
     template <typename T> ResultFuture<typename T::ResultType> operator()(const T &command)
     {
-        auto &result = execute(command.getCommand());
+        auto &result = execute(command.toString());
         return ResultFuture<typename T::ResultType>(result.get_future());
     }
 

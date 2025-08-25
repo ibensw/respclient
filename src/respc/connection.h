@@ -2,7 +2,6 @@
 
 #include "ast.h"
 #include "error.h"
-#include "types.h"
 #include <chrono>
 #include <deque>
 #include <functional>

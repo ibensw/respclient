@@ -24,7 +24,7 @@ class SyncExecutor
     template <typename T>
     typename T::ResultType operator()(const T &command, std::optional<std::chrono::milliseconds> timeout = std::nullopt)
     {
-        auto result = execute(command.getCommand(), timeout.value_or(defaultTimeout));
+        auto result = execute(command.toString(), timeout.value_or(defaultTimeout));
         return parser::Parser<typename T::ResultType>::parse(result.get());
     }
 
